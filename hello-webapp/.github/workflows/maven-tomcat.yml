@@ -1,0 +1,32 @@
+name: CI/CD - Maven Build and Deploy to Tomcat
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Build WAR with Maven
+      run: mvn clean package
+
+    - name: Deploy to Tomcat
+      env:
+        TOMCAT_USER: ${{ secrets.TOMCAT_USER }}
+        TOMCAT_PASS: ${{ secrets.TOMCAT_PASS }}
+        TOMCAT_HOST: ${{ secrets.TOMCAT_HOST }}
+      run: |
+        curl -T target/hello-webapp.war \
+          -u $TOMCAT_USER:$TOMCAT_PASS \
+          "http://$TOMCAT_HOST:8081/manager/text/deploy?path=/hello-webapp&update=true"
